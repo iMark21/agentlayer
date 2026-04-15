@@ -35,7 +35,7 @@ jobs:
           git -C "$repo" init
 
           bin/ai-ready install "$repo" \
-            --runtimes codex,claude \
+            --runtimes codex,claude,generic \
             --project-type android \
             --git-name "CI Bot" \
             --git-email "ci@example.com" \
@@ -47,19 +47,44 @@ jobs:
           test -f "$repo/.ai/rules/compose.md"
           test -f "$repo/AGENTS.md"
           test -f "$repo/CLAUDE.md"
+          test -f "$repo/AI-READY.md"
           test -f "$repo/.githooks/pre-commit"
+
+      - name: iOS install smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          repo="$(mktemp -d)"
+          mkdir -p "$repo/MyApp.xcodeproj"
+          touch "$repo/Podfile"
+          git -C "$repo" init
+
+          bin/ai-ready install "$repo" \
+            --runtimes codex,claude,generic \
+            --project-type ios \
+            --git-name "CI Bot" \
+            --git-email "ci@example.com" \
+            --apply-git-config \
+            --non-interactive
+
+          test -f "$repo/.ai/README.md"
+          test -f "$repo/.ai/rules/swift.md"
+          test -f "$repo/.ai/rules/swiftui.md"
+          test -f "$repo/AGENTS.md"
+          test -f "$repo/CLAUDE.md"
+          test -f "$repo/AI-READY.md"
 
       - name: Standardize smoke test
         shell: bash
         run: |
           set -euo pipefail
           repo="$(mktemp -d)"
-          mkdir -p "$repo/.github/instructions"
-          touch "$repo/AGENTS.md" "$repo/CLAUDE.md" "$repo/.github/copilot-instructions.md" "$repo/.github/instructions/old.instructions.md"
+          mkdir -p "$repo/.github/instructions" "$repo/.cursor/rules"
+          touch "$repo/AGENTS.md" "$repo/CLAUDE.md" "$repo/AI-READY.md" "$repo/.github/copilot-instructions.md" "$repo/.github/instructions/old.instructions.md" "$repo/.cursor/rules/ai-ready.mdc"
           git -C "$repo" init
 
           bin/ai-ready standardize "$repo" \
-            --runtimes copilot \
+            --runtimes copilot,generic \
             --project-type generic \
             --yes \
             --non-interactive
@@ -67,6 +92,8 @@ jobs:
           test -f "$repo/.ai/README.md"
           test -f "$repo/.github/copilot-instructions.md"
           test -f "$repo/.github/instructions/code.instructions.md"
+          test -f "$repo/AI-READY.md"
           test ! -f "$repo/AGENTS.md"
           test ! -f "$repo/CLAUDE.md"
+          test ! -f "$repo/.cursor/rules/ai-ready.mdc"
           find "$repo/.ai/archive" -type f | grep -q .

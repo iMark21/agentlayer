@@ -84,7 +84,7 @@ normalize_runtimes() {
   value="$(normalize_csv "$1")"
 
   if [ "$value" = "all" ]; then
-    value="codex,claude,copilot"
+    value="codex,claude,copilot,cursor,generic"
   fi
 
   printf '%s' "$value"
@@ -202,7 +202,7 @@ detect_project_type() {
     return 0
   fi
 
-  if find "$TARGET_REPO" -maxdepth 3 \( -name '*.xcodeproj' -o -name 'Package.swift' \) | grep -q .; then
+  if find "$TARGET_REPO" -maxdepth 3 \( -name '*.xcodeproj' -o -name '*.xcworkspace' -o -name 'Package.swift' -o -name 'Podfile' \) | grep -q .; then
     printf 'ios'
     return 0
   fi
@@ -223,10 +223,10 @@ detect_project_type() {
 default_runtime_suggestion() {
   case "$PROJECT_TYPE" in
     android|ios|web|backend)
-      printf 'codex,claude'
+      printf 'codex,claude,generic'
       ;;
     *)
-      printf 'codex'
+      printf 'generic'
       ;;
   esac
 }
@@ -305,7 +305,7 @@ EOF
       ;;
     ios)
       cat <<'EOF'
-iOS project expected to use Swift, Xcode or Swift Package Manager, structured presentation/state layers, and SwiftUI or UIKit.
+iOS project expected to use Swift, Xcode or Swift Package Manager, structured presentation/state layers, explicit concurrency boundaries, and SwiftUI or UIKit.
 EOF
       ;;
     web)
@@ -475,11 +475,11 @@ must stay thin and must not drift from what is defined here.
     fi
     if has_runtime cursor; then
       if has_runtime codex || has_runtime claude || has_runtime copilot; then printf '%s' ', '; fi
-      printf '%s' '\`Cursor\` via project-local adapter notes'
+      printf '%s' '\`Cursor\` via \`.cursor/rules/ai-ready.mdc\`'
     fi
     if has_runtime generic; then
       if has_runtime codex || has_runtime claude || has_runtime copilot || has_runtime cursor; then printf '%s' ', '; fi
-      printf '%s' '\`Generic\` runtime notes only'
+      printf '%s' '\`Generic AI\` via \`AI-READY.md\`'
     fi
   )
 
@@ -572,8 +572,10 @@ EOF
 
 - Use a single state owner per screen or feature flow
 - Keep SwiftUI views declarative and move mutable logic into dedicated types
+- Prefer structured concurrency over ad hoc callback chains
+- Mark UI-facing state owners with \`@MainActor\` when appropriate
 - If UIKit is present, document the boundary with SwiftUI
-- Make concurrency expectations explicit
+- Make async, cancellation, and threading expectations explicit
 
 ## Fill This In
 
@@ -790,7 +792,9 @@ EOF
 
 - Keep views declarative and business logic elsewhere
 - Make state ownership explicit
-- Keep async boundaries clear
+- Prefer structured concurrency and \`async/await\`
+- Use \`@MainActor\` for UI-facing state owners when the repo follows that pattern
+- Keep async boundaries, cancellation, and actor hops clear
 - Prefer small, testable units over giant view models or controllers
 - Record migration constraints when touching legacy UIKit
 EOF
@@ -841,6 +845,7 @@ EOF
 - Keep navigation ownership explicit
 - Record any UIKit bridges or wrappers
 - Prefer preview fixtures or sample data
+- Keep async loading and error states explicit in the screen state model
 EOF
       ;;
     web)
@@ -1110,6 +1115,61 @@ Do not create a second source of truth under \`.github/\`.
 EOF
 }
 
+render_cursor_adapter() {
+  cat <<EOF
+---
+description: AI-Ready adapter for Cursor
+globs:
+alwaysApply: true
+---
+
+Treat \`.ai/\` as canonical.
+
+Read order:
+1. \`.ai/README.md\`
+2. \`.ai/context.md\`
+3. \`.ai/context/architecture.md\`
+4. \`.ai/context/dependencies.md\`
+5. \`.ai/context/repository.md\`
+6. \`.ai/decision-framework.md\`
+7. The relevant files under \`.ai/rules/\`, \`.ai/agents/\`, and \`.ai/skills/\`
+
+If \`AI-READY.md\` exists, use it as the universal adapter layer for non-native runtimes.
+Do not duplicate workflow logic inside Cursor-specific files.
+EOF
+}
+
+render_generic_adapter() {
+  cat <<EOF
+# Generic AI Adapter
+
+Use this file when the runtime does not have a native repo adapter format, or when you want one universal entry point that works across multiple tools.
+
+Treat \`.ai/\` as canonical.
+
+## Read Order
+
+1. \`.ai/README.md\`
+2. \`.ai/context.md\`
+3. \`.ai/context/architecture.md\`
+4. \`.ai/context/dependencies.md\`
+5. \`.ai/context/repository.md\`
+6. \`.ai/decision-framework.md\`
+7. The relevant files under \`.ai/rules/\`, \`.ai/agents/\`, and \`.ai/skills/\`
+
+## Operating Rules
+
+- Do not create a second source of truth outside \`.ai/\`
+- Prefer existing project conventions over generic best practices
+- If key architecture details are still placeholders, audit the repo first and update \`.ai/context/\`
+- After meaningful work, update \`.ai/context/recent-changes.md\`
+
+## Suggested First Prompt
+
+Audit this repository against the canonical \`.ai/\` layer, summarize the real architecture and gaps, and then propose the smallest safe set of updates before changing code.
+EOF
+}
+
 render_copilot_instruction_wrapper() {
   local title="$1"
   local body="$2"
@@ -1212,6 +1272,14 @@ write_runtime_adapters() {
     write_file "$TARGET_REPO/.github/instructions/analytics.instructions.md" "$(render_copilot_instruction_wrapper "analytics rule" "$(render_analytics_rule_md)")" "$overwrite"
     write_file "$TARGET_REPO/.github/instructions/data.instructions.md" "$(render_copilot_instruction_wrapper "data rule" "$(render_data_rule_md)")" "$overwrite"
   fi
+
+  if has_runtime cursor; then
+    write_file "$TARGET_REPO/.cursor/rules/ai-ready.mdc" "$(render_cursor_adapter)" "$overwrite"
+  fi
+
+  if has_runtime generic; then
+    write_file "$TARGET_REPO/AI-READY.md" "$(render_generic_adapter)" "$overwrite"
+  fi
 }
 
 build_audit_report() {
@@ -1222,7 +1290,7 @@ build_audit_report() {
     git_repo_value="yes"
   fi
 
-  if [ -d "$TARGET_REPO/.ai" ] || [ -f "$TARGET_REPO/AGENTS.md" ] || [ -f "$TARGET_REPO/CLAUDE.md" ] || [ -f "$TARGET_REPO/.github/copilot-instructions.md" ]; then
+  if [ -d "$TARGET_REPO/.ai" ] || [ -f "$TARGET_REPO/AGENTS.md" ] || [ -f "$TARGET_REPO/CLAUDE.md" ] || [ -f "$TARGET_REPO/.github/copilot-instructions.md" ] || [ -f "$TARGET_REPO/.cursor/rules/ai-ready.mdc" ] || [ -f "$TARGET_REPO/AI-READY.md" ]; then
     recommendation="- Repository already has some AI-related files. Prefer \`standardize\` if you want a canonical \`.ai/\` layer plus aligned runtime adapters.
 - Review existing docs before overwriting them."
   else
@@ -1250,6 +1318,8 @@ build_audit_report() {
 | \`CLAUDE.md\` | $( [ -f "$TARGET_REPO/CLAUDE.md" ] && printf 'present' || printf 'missing' ) |
 | \`.github/copilot-instructions.md\` | $( [ -f "$TARGET_REPO/.github/copilot-instructions.md" ] && printf 'present' || printf 'missing' ) |
 | \`.github/instructions/\` | $( [ -d "$TARGET_REPO/.github/instructions" ] && printf 'present' || printf 'missing' ) |
+| \`.cursor/rules/ai-ready.mdc\` | $( [ -f "$TARGET_REPO/.cursor/rules/ai-ready.mdc" ] && printf 'present' || printf 'missing' ) |
+| \`AI-READY.md\` | $( [ -f "$TARGET_REPO/AI-READY.md" ] && printf 'present' || printf 'missing' ) |
 | \`.githooks/pre-commit\` | $( [ -f "$TARGET_REPO/.githooks/pre-commit" ] && printf 'present' || printf 'missing' ) |
 
 ## Recommendation
@@ -1272,7 +1342,7 @@ run_audit() {
 run_install() {
   ensure_runtimes_selected
 
-  if [ -d "$TARGET_REPO/.ai" ] || [ -f "$TARGET_REPO/AGENTS.md" ] || [ -f "$TARGET_REPO/CLAUDE.md" ] || [ -f "$TARGET_REPO/.github/copilot-instructions.md" ]; then
+  if [ -d "$TARGET_REPO/.ai" ] || [ -f "$TARGET_REPO/AGENTS.md" ] || [ -f "$TARGET_REPO/CLAUDE.md" ] || [ -f "$TARGET_REPO/.github/copilot-instructions.md" ] || [ -f "$TARGET_REPO/.cursor/rules/ai-ready.mdc" ] || [ -f "$TARGET_REPO/AI-READY.md" ]; then
     warn "AI-related files already exist in the target repo"
     prompt_yes_no "Continue with install mode anyway? Consider using standardize instead." "n" || exit 1
   fi
@@ -1296,10 +1366,13 @@ run_standardize() {
   backup_path_if_exists "$TARGET_REPO/CLAUDE.md" "$backup_root"
   backup_path_if_exists "$TARGET_REPO/.github/copilot-instructions.md" "$backup_root"
   backup_path_if_exists "$TARGET_REPO/.github/instructions" "$backup_root"
+  backup_path_if_exists "$TARGET_REPO/.cursor/rules/ai-ready.mdc" "$backup_root"
+  backup_path_if_exists "$TARGET_REPO/AI-READY.md" "$backup_root"
   backup_path_if_exists "$TARGET_REPO/.githooks/pre-commit" "$backup_root"
 
   remove_path_if_exists "$TARGET_REPO/.github/copilot-instructions.md"
   remove_path_if_exists "$TARGET_REPO/.github/instructions"
+  remove_path_if_exists "$TARGET_REPO/.cursor/rules/ai-ready.mdc"
 
   if ! has_runtime codex; then
     remove_path_if_exists "$TARGET_REPO/AGENTS.md"
@@ -1307,6 +1380,10 @@ run_standardize() {
 
   if ! has_runtime claude; then
     remove_path_if_exists "$TARGET_REPO/CLAUDE.md"
+  fi
+
+  if ! has_runtime generic; then
+    remove_path_if_exists "$TARGET_REPO/AI-READY.md"
   fi
 
   write_canonical_files 1
