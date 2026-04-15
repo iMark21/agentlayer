@@ -16,6 +16,31 @@ The operating model is:
 4. keep Git governance and repository conventions explicit
 5. if the repo already has AI files, audit first and standardize instead of blindly overwriting
 
+## Installing The CLI
+
+If you have access to the repo:
+
+```bash
+git clone git@github.com:iMark21/ai-ready-bootstrap.git
+cd ai-ready-bootstrap
+bash install.sh
+ai-ready --help
+```
+
+The installer places `ai-ready` in `~/.local/bin` by default.
+
+You can override that:
+
+```bash
+bash install.sh --bin-dir "$HOME/bin"
+```
+
+If you prefer not to install globally yet, run:
+
+```bash
+bin/ai-ready --help
+```
+
 ## Core Model
 
 ### Canonical Layer
@@ -231,6 +256,75 @@ What it does:
 - `.github/instructions/`
 - `.cursor/rules/ai-ready.mdc`
 - `AI-READY.md`
+
+## Agents, Skills, And Real Workflow
+
+The generated `agents` and `skills` are Markdown playbooks.
+
+They are not background services. They define which working mode the AI should use at each step.
+
+### Generated Agents
+
+| Agent File | Responsibility |
+| --- | --- |
+| `.ai/agents/proj-explore.md` | explore an unfamiliar area before planning or coding |
+| `.ai/agents/proj-feature.md` | create the file-level implementation plan for a feature |
+| `.ai/agents/proj-code.md` | execute the approved plan in small steps |
+| `.ai/agents/proj-verify.md` | verify acceptance criteria, run tests, and report residual risk |
+| `.ai/agents/proj-fix.md` | reproduce and isolate defects before applying the smallest safe fix |
+| `.ai/agents/proj-tech.md` | structure refactors and technical cleanup |
+| `.ai/agents/proj-spike.md` | run a time-boxed investigation and recommend a direction |
+
+### Generated Skills
+
+| Skill File | Responsibility |
+| --- | --- |
+| `.ai/skills/context-refresh.md` | refresh architecture, dependencies, features, and recent changes |
+| `.ai/skills/feature-scaffold.md` | create the minimum feature scaffold in the repository style |
+| `.ai/skills/migration-audit.md` | estimate and structure a migration before execution |
+
+### Real Feature Workflow
+
+| Step | Agent / File | Result |
+| --- | --- | --- |
+| 1 | runtime adapter such as `AGENTS.md`, `CLAUDE.md`, or `AI-READY.md` | the AI is redirected into `.ai/` |
+| 2 | `.ai/agents/proj-explore.md` | relevant files, architecture pattern, and risks are identified |
+| 3 | `.ai/agents/proj-feature.md` | the implementation plan is created |
+| 4 | `.ai/agents/proj-code.md` | the code is written |
+| 5 | `.ai/agents/proj-verify.md` and `.ai/rules/testing.md` | tests and checks are run |
+| 6 | `.ai/skills/context-refresh.md` and `.ai/context/recent-changes.md` | the repo memory is updated |
+
+### Real Bug Workflow
+
+| Step | Agent / File | Result |
+| --- | --- | --- |
+| 1 | `.ai/agents/proj-fix.md` | reproduction and root-cause framing |
+| 2 | `.ai/agents/proj-code.md` | smallest safe code change |
+| 3 | `.ai/agents/proj-verify.md` | regression and risk check |
+| 4 | `.ai/context/recent-changes.md` | bug and constraint memory recorded |
+
+### Real Refactor Or Migration Workflow
+
+| Step | Agent / File | Result |
+| --- | --- | --- |
+| 1 | `.ai/agents/proj-spike.md` or `.ai/skills/migration-audit.md` | options, effort, and risk |
+| 2 | `.ai/agents/proj-tech.md` | sequence and safety net |
+| 3 | `.ai/agents/proj-code.md` | incremental refactor or migration |
+| 4 | `.ai/agents/proj-verify.md` | regression validation |
+
+### Practical Interpretation
+
+If the runtime supports sub-agents, these phases can be split.
+
+If it does not, the same runtime still follows the same sequence:
+
+- understand the area
+- plan
+- code
+- verify
+- update memory
+
+That is the intended operating workflow after bootstrap.
 
 ## Operating Modes For Teams
 

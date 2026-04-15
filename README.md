@@ -4,41 +4,80 @@ Bootstrap, audit, and standardize a canonical AI layer in an existing software r
 
 Private repo: `iMark21/ai-ready-bootstrap`
 
-## Core Model
+## What This Is
 
-- `.ai/` is always the canonical layer
-- you choose one, two, or several runtimes explicitly
+This tool solves a specific problem:
+
+- a repo has no AI-Ready layer yet
+- or it has mixed files like `AGENTS.md`, `CLAUDE.md`, Copilot instructions, and ad hoc notes
+- and the team wants one canonical source of truth that works across one or several AI tools
+
+The model is simple:
+
+- `.ai/` is canonical
 - runtime adapters stay thin and point back to `.ai/`
-- `generic` installs `AI-READY.md` as a universal adapter for any AI tool
-- `all` expands to `codex,claude,copilot,cursor,generic`
+- you choose exactly which runtimes to support
+- `generic` installs `AI-READY.md` as a universal adapter for any AI
 
-This is designed for teams that need a repeatable AI-Ready setup whether the target repo is Android, iOS, web, backend, or still undefined.
+`all` expands to `codex,claude,copilot,cursor,generic`.
 
-## Why A CLI Instead Of Only A Skill
+## Install This CLI
 
-A skill is not enough for repo bootstrap.
-
-You need a tool that can:
-
-- work even when the repo has no AI setup at all
-- audit before changing anything
-- standardize mixed legacy AI files into one canon
-- install only the adapters a team actually uses
-- hand off a repo to teammates who do not use the same AI runtime
-
-## Commands
+If you have access to the repo, the fastest path is:
 
 ```bash
-# Read-only inspection
-bin/ai-ready audit /path/to/repo
+git clone git@github.com:iMark21/ai-ready-bootstrap.git
+cd ai-ready-bootstrap
+bash install.sh
+ai-ready --help
+```
 
-# Fresh install
-bin/ai-ready install /path/to/repo \
+By default, `install.sh` installs `ai-ready` into `~/.local/bin`.
+
+If you want a different location:
+
+```bash
+bash install.sh --bin-dir "$HOME/bin"
+```
+
+If you prefer not to install anything globally yet, you can run the CLI directly from the repo:
+
+```bash
+bin/ai-ready --help
+```
+
+### Installer Options
+
+```bash
+bash install.sh --help
+```
+
+Supported flags:
+
+- `--bin-dir PATH` to choose the target directory
+- `--copy` to copy the binary instead of symlinking it
+- `--force` to replace an existing `ai-ready`
+
+## First Test As An External User
+
+Once the CLI is available, test it against a real repo:
+
+```bash
+ai-ready audit /path/to/project
+```
+
+Or bootstrap a fresh AI layer:
+
+```bash
+ai-ready install /path/to/project \
   --runtimes codex,claude,generic \
   --project-type android
+```
 
-# Normalize an existing setup
-bin/ai-ready standardize /path/to/repo \
+If the repo already has AI files, normalize it instead:
+
+```bash
+ai-ready standardize /path/to/project \
   --runtimes all \
   --yes
 ```
@@ -53,7 +92,7 @@ bin/ai-ready standardize /path/to/repo \
 | `backend` | `go.mod`, `Cargo.toml`, `pyproject.toml` | `.ai/rules/code.md`, `.ai/rules/ui.md` |
 | `generic` | fallback when nothing else matches | `.ai/rules/code.md`, `.ai/rules/ui.md` |
 
-The iOS path is first-class: the generated guidance is Swift/SwiftUI-oriented and explicitly calls out state ownership, structured concurrency, `@MainActor`, UIKit boundaries, and preview/sample-data expectations.
+iOS is first-class. The generated iOS guidance explicitly calls out structured concurrency, `@MainActor`, UIKit boundaries, and preview/sample-data expectations.
 
 ## Runtime Targets
 
@@ -65,60 +104,158 @@ The iOS path is first-class: the generated guidance is Swift/SwiftUI-oriented an
 | `cursor` | `.cursor/rules/ai-ready.mdc` |
 | `generic` | `AI-READY.md` |
 
-`generic` is the universal mode. Use it when:
+Use `generic` when:
 
 - the AI tool has no native repo instruction format
 - you want one cross-runtime handoff file
 - the team has not decided yet which assistant will own the repo
 
-You can combine `generic` with any runtime-specific adapter.
+## What Gets Installed In The Target Repo
 
-## What It Generates
+### Canonical Control Plane
 
-Canonical files:
+| Path | Purpose |
+| --- | --- |
+| `.ai/README.md` | entry point into the canonical AI layer |
+| `.ai/context.md` | compact project summary |
+| `.ai/context/architecture.md` | real module/layer map and architectural constraints |
+| `.ai/context/dependencies.md` | dependency boundaries and integration notes |
+| `.ai/context/features.md` | feature inventory |
+| `.ai/context/repository.md` | git workflow, branch policy, commit rules |
+| `.ai/context/recent-changes.md` | short-term memory of important repo changes and gotchas |
+| `.ai/decision-framework.md` | how to approach features, fixes, refactors, migrations, analytics, new dependencies |
 
-- `.ai/README.md`
-- `.ai/context.md`
-- `.ai/context/architecture.md`
-- `.ai/context/dependencies.md`
-- `.ai/context/features.md`
-- `.ai/context/repository.md`
-- `.ai/context/recent-changes.md`
-- `.ai/decision-framework.md`
-- `.ai/rules/`
-- `.ai/agents/`
-- `.ai/skills/`
+### Rules
 
-Optional adapters:
+These are the guardrails the AI should follow when editing code.
 
-- `AGENTS.md`
-- `CLAUDE.md`
-- `.github/copilot-instructions.md`
-- `.github/instructions/`
-- `.cursor/rules/ai-ready.mdc`
-- `AI-READY.md`
+| Path Pattern | Why It Exists |
+| --- | --- |
+| `.ai/rules/<language>.md` | language-specific engineering constraints such as Kotlin, Swift, or TypeScript |
+| `.ai/rules/<ui>.md` | UI-stack constraints such as Compose, SwiftUI, or React |
+| `.ai/rules/feature.md` | feature-by-feature structuring guidance |
+| `.ai/rules/testing.md` | test expectations before and after changes |
+| `.ai/rules/analytics.md` | event naming, payload, and trigger discipline |
+| `.ai/rules/data.md` | DTO/domain/persistence boundaries and mapping discipline |
 
-Optional Git governance:
+### Agents
 
-- `.githooks/pre-commit`
-- `core.hooksPath=.githooks`
-- local `user.name` / `user.email` if you pass `--apply-git-config`
+These are not background daemons. They are Markdown playbooks that tell the AI which working mode to use and what output is expected.
+
+| Agent File | Why It Exists |
+| --- | --- |
+| `.ai/agents/proj-explore.md` | audit an unfamiliar area before planning or coding |
+| `.ai/agents/proj-feature.md` | turn a known feature goal into a file-level implementation plan |
+| `.ai/agents/proj-code.md` | execute an approved plan in small verified steps |
+| `.ai/agents/proj-verify.md` | verify behavior, run tests, and report residual risk before merge |
+| `.ai/agents/proj-fix.md` | fix a defect by reproducing, isolating, and minimizing blast radius |
+| `.ai/agents/proj-tech.md` | handle refactors and structural cleanup safely |
+| `.ai/agents/proj-spike.md` | run a time-boxed investigation and report options and risk |
+
+### Skills
+
+These are deterministic prompts/checklists the AI can reuse for common operations.
+
+| Skill File | Why It Exists |
+| --- | --- |
+| `.ai/skills/context-refresh.md` | refresh architecture, dependencies, feature map, and recent changes after major repo drift |
+| `.ai/skills/feature-scaffold.md` | create the minimum feature boilerplate in the repo's style |
+| `.ai/skills/migration-audit.md` | estimate and structure migrations such as legacy UI to modern UI or callbacks to structured async |
+
+### Runtime Adapters
+
+These only exist if selected.
+
+| Adapter | Why It Exists |
+| --- | --- |
+| `AGENTS.md` | tells Codex to boot from `.ai/` |
+| `CLAUDE.md` | tells Claude Code to boot from `.ai/` |
+| `.github/copilot-instructions.md` plus `.github/instructions/` | gives Copilot the thin wrappers it expects while keeping `.ai/` canonical |
+| `.cursor/rules/ai-ready.mdc` | points Cursor back to `.ai/` |
+| `AI-READY.md` | universal fallback adapter for any AI tool without native support |
 
 ## Installed Flow
 
 ```mermaid
 flowchart TD
     A[Run ai-ready install or standardize] --> B[Canonical .ai layer]
-    B --> C[Context and repository rules]
-    B --> D[Agents and skills]
-    B --> E[Decision framework]
-    A --> F[Runtime adapters]
-    F --> G[AGENTS.md for Codex]
-    F --> H[CLAUDE.md for Claude Code]
-    F --> I[.github instructions for Copilot]
-    F --> J[.cursor rules for Cursor]
-    F --> K[AI-READY.md for any AI]
+    B --> C[Context]
+    B --> D[Rules]
+    B --> E[Agents]
+    B --> F[Skills]
+    A --> G[Runtime adapters]
+    G --> H[Codex adapter]
+    G --> I[Claude adapter]
+    G --> J[Copilot adapter]
+    G --> K[Cursor adapter]
+    G --> L[Generic AI adapter]
 ```
+
+## How It Works After Install
+
+This is the part that often gets misunderstood:
+
+1. the bootstrap does not magically know the real architecture of your repo
+2. it installs a canonical skeleton plus repo-working conventions
+3. the selected AI runtime reads its adapter
+4. that adapter redirects the runtime into `.ai/`
+5. the first useful task is usually an audit pass that replaces placeholders with real repo knowledge
+6. from then on, the AI should keep using `.ai/` as the operating memory of the project
+
+So the generated `agents` and `skills` are not meant to be "executed" as independent software. They are working modes and reusable prompts stored as files so the AI behaves consistently.
+
+## Real Workflows
+
+The default mental model is not "many autonomous bots running in parallel".
+
+It is:
+
+- one AI runtime enters through its adapter
+- that runtime uses the generated agent playbooks in sequence
+- each playbook has a clear responsibility and expected output
+
+If the runtime supports sub-agents, you can split some phases. If not, the same runtime executes the flow step by step.
+
+### 1. New Feature Workflow
+
+| Phase | Agent / File | Who Does It | Output |
+| --- | --- | --- | --- |
+| Intake | `AGENTS.md`, `CLAUDE.md`, `AI-READY.md`, or equivalent | active runtime | boots from `.ai/` |
+| Repo discovery | `.ai/agents/proj-explore.md` | exploration mode | file map, patterns, risks, reusable references |
+| Implementation plan | `.ai/agents/proj-feature.md` | planning mode | files to touch, state/data boundaries, tests, analytics impact |
+| Coding | `.ai/agents/proj-code.md` | execution mode | code changes in small verified steps |
+| Verification | `.ai/agents/proj-verify.md` plus `.ai/rules/testing.md` | verification mode | test results, manual checks, residual risk |
+| Memory update | `.ai/skills/context-refresh.md` and `.ai/context/recent-changes.md` | active runtime | project memory updated after the change |
+
+### 2. Bug Fix Workflow
+
+| Phase | Agent / File | Who Does It | Output |
+| --- | --- | --- | --- |
+| Reproduction and root cause | `.ai/agents/proj-fix.md` | bug-fix mode | symptom, root cause, affected area |
+| Safe implementation | `.ai/agents/proj-code.md` | execution mode | smallest safe fix |
+| Regression check | `.ai/agents/proj-verify.md` | verification mode | tests run, regressions checked, open risk |
+| Memory update | `.ai/context/recent-changes.md` | active runtime | gotchas and fixes recorded |
+
+### 3. Refactor Or Migration Workflow
+
+| Phase | Agent / File | Who Does It | Output |
+| --- | --- | --- | --- |
+| Investigation | `.ai/agents/proj-spike.md` or `.ai/skills/migration-audit.md` | research mode | options, effort, risk, recommendation |
+| Structure plan | `.ai/agents/proj-tech.md` | technical-planning mode | blast radius, safety net, sequence of changes |
+| Execution | `.ai/agents/proj-code.md` | execution mode | incremental structural changes |
+| Verification | `.ai/agents/proj-verify.md` | verification mode | regression coverage and deferred risk |
+
+### Who Creates, Who Codes, Who Tests
+
+In practice:
+
+- `proj-explore` creates the understanding of the area
+- `proj-feature` or `proj-tech` creates the implementation plan
+- `proj-code` writes the code
+- `proj-verify` tests and validates the outcome
+- `context-refresh` and `recent-changes.md` keep the AI memory aligned with the repo
+
+So there is a real workflow, but it is encoded as playbooks rather than as a hardwired orchestration engine.
 
 ## Runtime Resolution Once Installed
 
@@ -135,12 +272,12 @@ sequenceDiagram
     R-->>Dev: Audit, plan, then safe code changes
 ```
 
-## Usage Examples
+## Typical Usage
 
 ### Android Fresh Install
 
 ```bash
-bin/ai-ready install ~/Developer/android-app \
+ai-ready install ~/Developer/android-app \
   --runtimes codex,claude,generic \
   --project-type android \
   --git-name "Michel Marques" \
@@ -151,7 +288,7 @@ bin/ai-ready install ~/Developer/android-app \
 ### iOS Fresh Install
 
 ```bash
-bin/ai-ready install ~/Developer/ios-app \
+ai-ready install ~/Developer/ios-app \
   --runtimes codex,claude,generic \
   --project-type ios \
   --git-name "Michel Marques" \
@@ -162,10 +299,10 @@ bin/ai-ready install ~/Developer/ios-app \
 ### Existing Repo With Mixed AI Files
 
 ```bash
-bin/ai-ready audit ~/Developer/mobile-app \
+ai-ready audit ~/Developer/mobile-app \
   --report-path /tmp/mobile-ai-audit.md
 
-bin/ai-ready standardize ~/Developer/mobile-app \
+ai-ready standardize ~/Developer/mobile-app \
   --runtimes codex,claude,copilot,generic \
   --yes
 ```
@@ -173,18 +310,16 @@ bin/ai-ready standardize ~/Developer/mobile-app \
 ### Universal Mode For Any AI
 
 ```bash
-bin/ai-ready install ~/Developer/unknown-repo \
+ai-ready install ~/Developer/unknown-repo \
   --runtimes generic \
   --project-type generic
 ```
 
 That path creates `.ai/` plus `AI-READY.md`, which is enough to hand the repository to almost any assistant.
 
-## After Install: Inside Codex Or Claude
+## What To Ask The AI After Install
 
 ### In Codex
-
-Open the target repo and start with:
 
 ```text
 Read AGENTS.md and the canonical .ai layer. Audit this repository, replace the generic placeholders with the real architecture, and then propose the smallest safe next improvements before editing code.
@@ -192,15 +327,11 @@ Read AGENTS.md and the canonical .ai layer. Audit this repository, replace the g
 
 ### In Claude Code
 
-Open the target repo and start with:
-
 ```text
 Read CLAUDE.md and the canonical .ai layer. Summarize the real module structure, identify missing context, and update the AI-Ready docs so they match the actual repository before changing implementation code.
 ```
 
 ### In A Generic AI Tool
-
-If the tool has no native adapter support, start with:
 
 ```text
 Read AI-READY.md and .ai/README.md. Audit the repo, infer the actual architecture, fill the placeholder AI context files, and propose a safe implementation plan that follows the existing project conventions.
@@ -208,14 +339,7 @@ Read AI-READY.md and .ai/README.md. Audit the repo, infer the actual architectur
 
 ### In Cursor
 
-If `cursor` was selected, the generated `.cursor/rules/ai-ready.mdc` points Cursor back to the `.ai/` canon. You can start with the same audit-first prompt used for Codex or Claude.
-
-## Typical Handoff To A Mobile Teammate
-
-Two modes are valid:
-
-1. Read first: run `audit`, share the report plus this `README` and `MANUAL.md`, then let the teammate choose runtimes before running `install` or `standardize`.
-2. Execute directly: run the CLI yourself, commit the generated layer, and let the teammate work with the installed adapters.
+If `cursor` was selected, `.cursor/rules/ai-ready.mdc` points Cursor back to `.ai/`. Start with the same audit-first prompt.
 
 ## Git Governance
 
@@ -231,14 +355,12 @@ The generated repository guidance mirrors the same discipline used in `ai-worksp
 GitHub Actions validates:
 
 - shell syntax for `bin/ai-ready`
+- shell syntax for `install.sh`
+- installer smoke test
 - Android fresh-install smoke tests
 - iOS fresh-install smoke tests
 - standardize-mode smoke tests including the universal generic adapter
 
-Workflow file:
-
-- `.github/workflows/ci.yml`
-
 ## Manual
 
-See [MANUAL.md](MANUAL.md) for the longer operating guide, runtime matrix, manual teammate handoff, and audit-first prompts for repositories that still have no AI-Ready system.
+See [MANUAL.md](MANUAL.md) for the longer operating guide, runtime matrix, manual teammate handoff, and the detailed explanation of how the installed agents, skills, rules, and adapters should be used inside a target repo.

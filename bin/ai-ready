@@ -967,6 +967,28 @@ Use this flow to execute an approved plan in small verified steps.
 EOF
 }
 
+render_agent_verify_md() {
+  cat <<EOF
+# Agent: Verify
+
+Use this flow after implementation or before merge.
+
+## Output
+
+- tests executed
+- manual checks executed
+- regressions found or ruled out
+- remaining risks or deferred checks
+
+## Rules
+
+- verify the acceptance criteria, not only the code diff
+- run the smallest meaningful regression set for the changed area
+- call out what was not tested
+- update \`.ai/context/recent-changes.md\` if behavior or constraints changed
+EOF
+}
+
 render_agent_fix_md() {
   cat <<EOF
 # Agent: Bug Fix
@@ -1237,6 +1259,7 @@ write_canonical_files() {
   write_file "$TARGET_REPO/.ai/agents/proj-explore.md" "$(render_agent_explore_md)" "$overwrite"
   write_file "$TARGET_REPO/.ai/agents/proj-feature.md" "$(render_agent_feature_md)" "$overwrite"
   write_file "$TARGET_REPO/.ai/agents/proj-code.md" "$(render_agent_code_md)" "$overwrite"
+  write_file "$TARGET_REPO/.ai/agents/proj-verify.md" "$(render_agent_verify_md)" "$overwrite"
   write_file "$TARGET_REPO/.ai/agents/proj-fix.md" "$(render_agent_fix_md)" "$overwrite"
   write_file "$TARGET_REPO/.ai/agents/proj-tech.md" "$(render_agent_tech_md)" "$overwrite"
   write_file "$TARGET_REPO/.ai/agents/proj-spike.md" "$(render_agent_spike_md)" "$overwrite"

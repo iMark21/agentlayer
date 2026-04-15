@@ -25,6 +25,18 @@ jobs:
       - name: Bash syntax
         run: bash -n bin/ai-ready
 
+      - name: Installer syntax
+        run: bash -n install.sh
+
+      - name: Installer smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          bin_dir="$(mktemp -d)"
+          bash install.sh --bin-dir "$bin_dir"
+          test -x "$bin_dir/ai-ready" -o -L "$bin_dir/ai-ready"
+          "$bin_dir/ai-ready" --help >/dev/null
+
       - name: Fresh install smoke test
         shell: bash
         run: |
@@ -48,6 +60,7 @@ jobs:
           test -f "$repo/AGENTS.md"
           test -f "$repo/CLAUDE.md"
           test -f "$repo/AI-READY.md"
+          test -f "$repo/.ai/agents/proj-verify.md"
           test -f "$repo/.githooks/pre-commit"
 
       - name: iOS install smoke test
@@ -73,6 +86,7 @@ jobs:
           test -f "$repo/AGENTS.md"
           test -f "$repo/CLAUDE.md"
           test -f "$repo/AI-READY.md"
+          test -f "$repo/.ai/agents/proj-verify.md"
 
       - name: Standardize smoke test
         shell: bash
@@ -93,6 +107,7 @@ jobs:
           test -f "$repo/.github/copilot-instructions.md"
           test -f "$repo/.github/instructions/code.instructions.md"
           test -f "$repo/AI-READY.md"
+          test -f "$repo/.ai/agents/proj-verify.md"
           test ! -f "$repo/AGENTS.md"
           test ! -f "$repo/CLAUDE.md"
           test ! -f "$repo/.cursor/rules/ai-ready.mdc"
