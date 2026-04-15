@@ -1,0 +1,26 @@
+#!/bin/bash
+set -eu
+
+if [ "${IMARK_SKIP_HOOK:-0}" = "1" ]; then
+  exit 0
+fi
+
+BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
+GIT_DIR="$(git rev-parse --git-dir 2>/dev/null || true)"
+
+if [ "$BRANCH" = "develop" ] || [ "$BRANCH" = "main" ] || [ "$BRANCH" = "master" ]; then
+  if [ -f "$GIT_DIR/MERGE_HEAD" ] || [ -f "$GIT_DIR/SQUASH_MSG" ]; then
+    exit 0
+  fi
+
+  echo ""
+  echo "  BLOCKED: Direct commit on '$BRANCH' is not allowed."
+  echo ""
+  echo "  Create a short-lived branch first:"
+  echo "    git checkout -b type/description"
+  echo ""
+  echo "  Bypass only for emergencies:"
+  echo "    IMARK_SKIP_HOOK=1 git commit ..."
+  echo ""
+  exit 1
+fi
