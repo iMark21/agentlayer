@@ -1,0 +1,123 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+      - "feature/**"
+      - "fix/**"
+      - "chore/**"
+      - "docs/**"
+  pull_request:
+    branches:
+      - develop
+      - main
+
+jobs:
+  validate-cli:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Bash syntax
+        run: bash -n bin/ai-ready
+
+      - name: Installer syntax
+        run: bash -n install.sh
+
+      - name: Installer smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          bin_dir="$(mktemp -d)"
+          bash install.sh --bin-dir "$bin_dir"
+          test -x "$bin_dir/ai-ready" -o -L "$bin_dir/ai-ready"
+          "$bin_dir/ai-ready" --help >/dev/null
+
+      - name: Fresh install smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          repo="$(mktemp -d)"
+          mkdir -p "$repo/app/src/main"
+          touch "$repo/settings.gradle.kts" "$repo/app/src/main/AndroidManifest.xml"
+          git -C "$repo" init
+
+          bin/ai-ready install "$repo" \
+            --runtimes codex,claude,generic \
+            --project-type android \
+            --git-name "CI Bot" \
+            --git-email "ci@example.com" \
+            --apply-git-config \
+            --non-interactive
+
+          test -f "$repo/.ai/README.md"
+          test -f "$repo/.ai/rules/kotlin.md"
+          test -f "$repo/.ai/rules/compose.md"
+          test -f "$repo/.ai/agents/proj-context-bootstrap.md"
+          test -f "$repo/AGENTS.md"
+          test -f "$repo/CLAUDE.md"
+          test -f "$repo/AI-READY.md"
+          test -f "$repo/.ai/agents/proj-verify.md"
+          test -f "$repo/.ai/skills/context-bootstrap.md"
+          grep -q 'Pending first-pass grounding' "$repo/.ai/context.md"
+          test -f "$repo/.githooks/pre-commit"
+
+      - name: iOS install smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          repo="$(mktemp -d)"
+          mkdir -p "$repo/MyApp.xcodeproj"
+          touch "$repo/Podfile"
+          git -C "$repo" init
+
+          bin/ai-ready install "$repo" \
+            --runtimes codex,claude,generic \
+            --project-type ios \
+            --git-name "CI Bot" \
+            --git-email "ci@example.com" \
+            --apply-git-config \
+            --non-interactive
+
+          test -f "$repo/.ai/README.md"
+          test -f "$repo/.ai/rules/swift.md"
+          test -f "$repo/.ai/rules/swiftui.md"
+          test -f "$repo/.ai/agents/proj-context-bootstrap.md"
+          test -f "$repo/AGENTS.md"
+          test -f "$repo/CLAUDE.md"
+          test -f "$repo/AI-READY.md"
+          test -f "$repo/.ai/agents/proj-verify.md"
+          test -f "$repo/.ai/skills/context-bootstrap.md"
+          grep -q 'Pending first-pass grounding' "$repo/.ai/context.md"
+
+      - name: Standardize smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          repo="$(mktemp -d)"
+          mkdir -p "$repo/.github/instructions" "$repo/.cursor/rules"
+          touch "$repo/AGENTS.md" "$repo/CLAUDE.md" "$repo/AI-READY.md" "$repo/.github/copilot-instructions.md" "$repo/.github/instructions/old.instructions.md" "$repo/.cursor/rules/ai-ready.mdc"
+          git -C "$repo" init
+
+          bin/ai-ready standardize "$repo" \
+            --runtimes copilot,generic \
+            --project-type generic \
+            --yes \
+            --non-interactive
+
+          test -f "$repo/.ai/README.md"
+          test -f "$repo/.github/copilot-instructions.md"
+          test -f "$repo/.github/instructions/code.instructions.md"
+          test -f "$repo/AI-READY.md"
+          test -f "$repo/.ai/agents/proj-context-bootstrap.md"
+          test -f "$repo/.ai/agents/proj-verify.md"
+          test -f "$repo/.ai/skills/context-bootstrap.md"
+          grep -q 'Pending first-pass grounding' "$repo/.ai/context.md"
+          test ! -f "$repo/AGENTS.md"
+          test ! -f "$repo/CLAUDE.md"
+          test ! -f "$repo/.cursor/rules/ai-ready.mdc"
+          find "$repo/.ai/archive" -type f | grep -q .

@@ -84,7 +84,7 @@ normalize_runtimes() {
   value="$(normalize_csv "$1")"
 
   if [ "$value" = "all" ]; then
-    value="codex,claude,copilot"
+    value="codex,claude,copilot,cursor,generic"
   fi
 
   printf '%s' "$value"
@@ -202,7 +202,7 @@ detect_project_type() {
     return 0
   fi
 
-  if find "$TARGET_REPO" -maxdepth 3 \( -name '*.xcodeproj' -o -name 'Package.swift' \) | grep -q .; then
+  if find "$TARGET_REPO" -maxdepth 3 \( -name '*.xcodeproj' -o -name '*.xcworkspace' -o -name 'Package.swift' -o -name 'Podfile' \) | grep -q .; then
     printf 'ios'
     return 0
   fi
@@ -223,10 +223,10 @@ detect_project_type() {
 default_runtime_suggestion() {
   case "$PROJECT_TYPE" in
     android|ios|web|backend)
-      printf 'codex,claude'
+      printf 'codex,claude,generic'
       ;;
     *)
-      printf 'codex'
+      printf 'generic'
       ;;
   esac
 }
@@ -305,7 +305,7 @@ EOF
       ;;
     ios)
       cat <<'EOF'
-iOS project expected to use Swift, Xcode or Swift Package Manager, structured presentation/state layers, and SwiftUI or UIKit.
+iOS project expected to use Swift, Xcode or Swift Package Manager, structured presentation/state layers, explicit concurrency boundaries, and SwiftUI or UIKit.
 EOF
       ;;
     web)
@@ -461,6 +461,11 @@ must stay thin and must not drift from what is defined here.
 7. \`.ai/decision-framework.md\`
 8. The relevant files under \`.ai/rules/\`, \`.ai/agents/\`, and \`.ai/skills/\`
 
+## First Pass Workflow
+
+If \`.ai/context.md\` still shows a pending bootstrap status or the context files are still generic templates,
+run \`.ai/agents/proj-context-bootstrap.md\` before planning features or editing product code.
+
 ## Installed Runtimes
 
 - $(
@@ -475,11 +480,11 @@ must stay thin and must not drift from what is defined here.
     fi
     if has_runtime cursor; then
       if has_runtime codex || has_runtime claude || has_runtime copilot; then printf '%s' ', '; fi
-      printf '%s' '\`Cursor\` via project-local adapter notes'
+      printf '%s' '\`Cursor\` via \`.cursor/rules/ai-ready.mdc\`'
     fi
     if has_runtime generic; then
       if has_runtime codex || has_runtime claude || has_runtime copilot || has_runtime cursor; then printf '%s' ', '; fi
-      printf '%s' '\`Generic\` runtime notes only'
+      printf '%s' '\`Generic AI\` via \`AI-READY.md\`'
     fi
   )
 
@@ -506,6 +511,7 @@ render_context_md() {
 | Language | $(language_label) |
 | UI Stack | $(ui_stack_label) |
 | Installed Runtimes | $(runtime_list_pretty) |
+| Context Bootstrap Status | Pending first-pass grounding |
 | Generated | $(timestamp_now) |
 
 ## Why This Exists
@@ -519,6 +525,7 @@ $(platform_summary)
 
 ## Immediate Follow-Up
 
+- Run \`.ai/agents/proj-context-bootstrap.md\` to ground these files in the real repository
 - Replace generic placeholders in the files under \`.ai/context/\`
 - Document the actual module layout and feature inventory
 - Record real anti-patterns and gotchas in \`.ai/context/recent-changes.md\`
@@ -572,8 +579,10 @@ EOF
 
 - Use a single state owner per screen or feature flow
 - Keep SwiftUI views declarative and move mutable logic into dedicated types
+- Prefer structured concurrency over ad hoc callback chains
+- Mark UI-facing state owners with \`@MainActor\` when appropriate
 - If UIKit is present, document the boundary with SwiftUI
-- Make concurrency expectations explicit
+- Make async, cancellation, and threading expectations explicit
 
 ## Fill This In
 
@@ -790,7 +799,9 @@ EOF
 
 - Keep views declarative and business logic elsewhere
 - Make state ownership explicit
-- Keep async boundaries clear
+- Prefer structured concurrency and \`async/await\`
+- Use \`@MainActor\` for UI-facing state owners when the repo follows that pattern
+- Keep async boundaries, cancellation, and actor hops clear
 - Prefer small, testable units over giant view models or controllers
 - Record migration constraints when touching legacy UIKit
 EOF
@@ -841,6 +852,7 @@ EOF
 - Keep navigation ownership explicit
 - Record any UIKit bridges or wrappers
 - Prefer preview fixtures or sample data
+- Keep async loading and error states explicit in the screen state model
 EOF
       ;;
     web)
@@ -931,6 +943,51 @@ Use this flow when the area is unfamiliar.
 EOF
 }
 
+render_agent_context_bootstrap_md() {
+  cat <<EOF
+# Agent: Context Bootstrap
+
+Use this flow immediately after \`install\` or \`standardize\` when the canonical \`.ai/context*\` files are still template-generated.
+
+## Mission
+
+Ground the AI layer in the real repository before implementation work begins.
+
+## Required Inputs
+
+- repository root structure
+- build and dependency files
+- module or package boundaries
+- test entry points and verification commands
+- obvious feature areas
+- known integration surfaces such as networking, persistence, analytics, and background work
+
+## Update These Files
+
+- \`.ai/context.md\`
+- \`.ai/context/architecture.md\`
+- \`.ai/context/dependencies.md\`
+- \`.ai/context/features.md\`
+- \`.ai/context/repository.md\`
+- \`.ai/context/recent-changes.md\`
+
+## Rules
+
+- infer only from evidence in the repository
+- do not invent architecture details you cannot support
+- if something is unclear, leave an explicit open question instead of hallucinating
+- do not implement product code in this pass unless the user explicitly asks for it
+- identify the real test and build commands if they exist
+
+## Completion Criteria
+
+- \`.ai/context.md\` no longer reads like a generic template
+- the architecture, dependencies, and features files reference real modules or paths
+- \`Context Bootstrap Status\` in \`.ai/context.md\` is changed from pending to grounded
+- \`.ai/context/recent-changes.md\` records that the first-pass context bootstrap happened
+EOF
+}
+
 render_agent_feature_md() {
   cat <<EOF
 # Agent: Feature Planning
@@ -959,6 +1016,28 @@ Use this flow to execute an approved plan in small verified steps.
 - keep the blast radius visible
 - update feature memory after implementation
 - update recent changes after meaningful edits
+EOF
+}
+
+render_agent_verify_md() {
+  cat <<EOF
+# Agent: Verify
+
+Use this flow after implementation or before merge.
+
+## Output
+
+- tests executed
+- manual checks executed
+- regressions found or ruled out
+- remaining risks or deferred checks
+
+## Rules
+
+- verify the acceptance criteria, not only the code diff
+- run the smallest meaningful regression set for the changed area
+- call out what was not tested
+- update \`.ai/context/recent-changes.md\` if behavior or constraints changed
 EOF
 }
 
@@ -1023,6 +1102,24 @@ Use this at sprint start, after large merges, or before major planning.
 EOF
 }
 
+render_skill_context_bootstrap_md() {
+  cat <<EOF
+# Skill: Context Bootstrap
+
+Use this immediately after a fresh AI-Ready install or standardize pass.
+
+## Checklist
+
+- identify the build system and primary entry points
+- map modules, packages, or targets
+- identify the real UI stack and state-management pattern
+- identify the data layer, persistence layer, and integration surfaces
+- identify test commands or test directories
+- rewrite the generated \`.ai/context*\` files so they reflect the real repository
+- leave explicit open questions where evidence is missing
+EOF
+}
+
 render_skill_feature_scaffold_md() {
   cat <<EOF
 # Skill: Feature Scaffold
@@ -1067,6 +1164,9 @@ Read order:
 6. \`.ai/decision-framework.md\`
 7. The relevant files under \`.ai/rules/\`, \`.ai/agents/\`, and \`.ai/skills/\`
 
+First pass rule:
+- if \`.ai/context.md\` still shows \`Pending first-pass grounding\`, run \`.ai/agents/proj-context-bootstrap.md\` before implementation work
+
 Do not maintain duplicate workflow logic here.
 EOF
 }
@@ -1085,6 +1185,9 @@ Read order:
 5. \`.ai/context/repository.md\`
 6. \`.ai/decision-framework.md\`
 7. The relevant files under \`.ai/rules/\`, \`.ai/agents/\`, and \`.ai/skills/\`
+
+First pass rule:
+- if \`.ai/context.md\` still shows \`Pending first-pass grounding\`, run \`.ai/agents/proj-context-bootstrap.md\` before implementation work
 
 Do not duplicate routing, workflow, or checklists here.
 EOF
@@ -1106,7 +1209,67 @@ Before editing:
 6. Read \`.ai/decision-framework.md\`
 7. Follow the matching instruction file in \`.github/instructions/\`
 
+First pass rule:
+- if \`.ai/context.md\` still shows \`Pending first-pass grounding\`, follow \`.ai/agents/proj-context-bootstrap.md\` before implementation work
+
 Do not create a second source of truth under \`.github/\`.
+EOF
+}
+
+render_cursor_adapter() {
+  cat <<EOF
+---
+description: AI-Ready adapter for Cursor
+globs:
+alwaysApply: true
+---
+
+Treat \`.ai/\` as canonical.
+
+Read order:
+1. \`.ai/README.md\`
+2. \`.ai/context.md\`
+3. \`.ai/context/architecture.md\`
+4. \`.ai/context/dependencies.md\`
+5. \`.ai/context/repository.md\`
+6. \`.ai/decision-framework.md\`
+7. The relevant files under \`.ai/rules/\`, \`.ai/agents/\`, and \`.ai/skills/\`
+
+If \`AI-READY.md\` exists, use it as the universal adapter layer for non-native runtimes.
+If \`.ai/context.md\` still shows \`Pending first-pass grounding\`, run \`.ai/agents/proj-context-bootstrap.md\` first.
+Do not duplicate workflow logic inside Cursor-specific files.
+EOF
+}
+
+render_generic_adapter() {
+  cat <<EOF
+# Generic AI Adapter
+
+Use this file when the runtime does not have a native repo adapter format, or when you want one universal entry point that works across multiple tools.
+
+Treat \`.ai/\` as canonical.
+
+## Read Order
+
+1. \`.ai/README.md\`
+2. \`.ai/context.md\`
+3. \`.ai/context/architecture.md\`
+4. \`.ai/context/dependencies.md\`
+5. \`.ai/context/repository.md\`
+6. \`.ai/decision-framework.md\`
+7. The relevant files under \`.ai/rules/\`, \`.ai/agents/\`, and \`.ai/skills/\`
+
+## Operating Rules
+
+- Do not create a second source of truth outside \`.ai/\`
+- Prefer existing project conventions over generic best practices
+- If \`.ai/context.md\` still shows \`Pending first-pass grounding\`, run \`.ai/agents/proj-context-bootstrap.md\` first
+- If key architecture details are still placeholders, audit the repo first and update \`.ai/context/\`
+- After meaningful work, update \`.ai/context/recent-changes.md\`
+
+## Suggested First Prompt
+
+Audit this repository against the canonical \`.ai/\` layer, summarize the real architecture and gaps, and then propose the smallest safe set of updates before changing code.
 EOF
 }
 
@@ -1175,11 +1338,14 @@ write_canonical_files() {
   write_file "$TARGET_REPO/.ai/rules/analytics.md" "$(render_analytics_rule_md)" "$overwrite"
   write_file "$TARGET_REPO/.ai/rules/data.md" "$(render_data_rule_md)" "$overwrite"
   write_file "$TARGET_REPO/.ai/agents/proj-explore.md" "$(render_agent_explore_md)" "$overwrite"
+  write_file "$TARGET_REPO/.ai/agents/proj-context-bootstrap.md" "$(render_agent_context_bootstrap_md)" "$overwrite"
   write_file "$TARGET_REPO/.ai/agents/proj-feature.md" "$(render_agent_feature_md)" "$overwrite"
   write_file "$TARGET_REPO/.ai/agents/proj-code.md" "$(render_agent_code_md)" "$overwrite"
+  write_file "$TARGET_REPO/.ai/agents/proj-verify.md" "$(render_agent_verify_md)" "$overwrite"
   write_file "$TARGET_REPO/.ai/agents/proj-fix.md" "$(render_agent_fix_md)" "$overwrite"
   write_file "$TARGET_REPO/.ai/agents/proj-tech.md" "$(render_agent_tech_md)" "$overwrite"
   write_file "$TARGET_REPO/.ai/agents/proj-spike.md" "$(render_agent_spike_md)" "$overwrite"
+  write_file "$TARGET_REPO/.ai/skills/context-bootstrap.md" "$(render_skill_context_bootstrap_md)" "$overwrite"
   write_file "$TARGET_REPO/.ai/skills/context-refresh.md" "$(render_skill_context_refresh_md)" "$overwrite"
   write_file "$TARGET_REPO/.ai/skills/feature-scaffold.md" "$(render_skill_feature_scaffold_md)" "$overwrite"
   write_file "$TARGET_REPO/.ai/skills/migration-audit.md" "$(render_skill_migration_audit_md)" "$overwrite"
@@ -1212,6 +1378,14 @@ write_runtime_adapters() {
     write_file "$TARGET_REPO/.github/instructions/analytics.instructions.md" "$(render_copilot_instruction_wrapper "analytics rule" "$(render_analytics_rule_md)")" "$overwrite"
     write_file "$TARGET_REPO/.github/instructions/data.instructions.md" "$(render_copilot_instruction_wrapper "data rule" "$(render_data_rule_md)")" "$overwrite"
   fi
+
+  if has_runtime cursor; then
+    write_file "$TARGET_REPO/.cursor/rules/ai-ready.mdc" "$(render_cursor_adapter)" "$overwrite"
+  fi
+
+  if has_runtime generic; then
+    write_file "$TARGET_REPO/AI-READY.md" "$(render_generic_adapter)" "$overwrite"
+  fi
 }
 
 build_audit_report() {
@@ -1222,7 +1396,7 @@ build_audit_report() {
     git_repo_value="yes"
   fi
 
-  if [ -d "$TARGET_REPO/.ai" ] || [ -f "$TARGET_REPO/AGENTS.md" ] || [ -f "$TARGET_REPO/CLAUDE.md" ] || [ -f "$TARGET_REPO/.github/copilot-instructions.md" ]; then
+  if [ -d "$TARGET_REPO/.ai" ] || [ -f "$TARGET_REPO/AGENTS.md" ] || [ -f "$TARGET_REPO/CLAUDE.md" ] || [ -f "$TARGET_REPO/.github/copilot-instructions.md" ] || [ -f "$TARGET_REPO/.cursor/rules/ai-ready.mdc" ] || [ -f "$TARGET_REPO/AI-READY.md" ]; then
     recommendation="- Repository already has some AI-related files. Prefer \`standardize\` if you want a canonical \`.ai/\` layer plus aligned runtime adapters.
 - Review existing docs before overwriting them."
   else
@@ -1250,12 +1424,39 @@ build_audit_report() {
 | \`CLAUDE.md\` | $( [ -f "$TARGET_REPO/CLAUDE.md" ] && printf 'present' || printf 'missing' ) |
 | \`.github/copilot-instructions.md\` | $( [ -f "$TARGET_REPO/.github/copilot-instructions.md" ] && printf 'present' || printf 'missing' ) |
 | \`.github/instructions/\` | $( [ -d "$TARGET_REPO/.github/instructions" ] && printf 'present' || printf 'missing' ) |
+| \`.cursor/rules/ai-ready.mdc\` | $( [ -f "$TARGET_REPO/.cursor/rules/ai-ready.mdc" ] && printf 'present' || printf 'missing' ) |
+| \`AI-READY.md\` | $( [ -f "$TARGET_REPO/AI-READY.md" ] && printf 'present' || printf 'missing' ) |
 | \`.githooks/pre-commit\` | $( [ -f "$TARGET_REPO/.githooks/pre-commit" ] && printf 'present' || printf 'missing' ) |
 
 ## Recommendation
 
 $recommendation
 EOF
+}
+
+print_first_pass_guidance() {
+  log ""
+  log "Next recommended first pass:"
+
+  if has_runtime codex; then
+    log "- Codex: open the repo and ask it to read AGENTS.md, then execute .ai/agents/proj-context-bootstrap.md before implementation work."
+  fi
+
+  if has_runtime claude; then
+    log "- Claude Code: open the repo and ask it to read CLAUDE.md, then execute .ai/agents/proj-context-bootstrap.md before implementation work."
+  fi
+
+  if has_runtime copilot; then
+    log "- Copilot: start from .github/copilot-instructions.md and run the context bootstrap flow before code changes."
+  fi
+
+  if has_runtime cursor; then
+    log "- Cursor: let .cursor/rules/ai-ready.mdc route into .ai/, then execute .ai/agents/proj-context-bootstrap.md first."
+  fi
+
+  if has_runtime generic; then
+    log "- Generic AI: start from AI-READY.md and execute .ai/agents/proj-context-bootstrap.md before implementation work."
+  fi
 }
 
 run_audit() {
@@ -1272,7 +1473,7 @@ run_audit() {
 run_install() {
   ensure_runtimes_selected
 
-  if [ -d "$TARGET_REPO/.ai" ] || [ -f "$TARGET_REPO/AGENTS.md" ] || [ -f "$TARGET_REPO/CLAUDE.md" ] || [ -f "$TARGET_REPO/.github/copilot-instructions.md" ]; then
+  if [ -d "$TARGET_REPO/.ai" ] || [ -f "$TARGET_REPO/AGENTS.md" ] || [ -f "$TARGET_REPO/CLAUDE.md" ] || [ -f "$TARGET_REPO/.github/copilot-instructions.md" ] || [ -f "$TARGET_REPO/.cursor/rules/ai-ready.mdc" ] || [ -f "$TARGET_REPO/AI-READY.md" ]; then
     warn "AI-related files already exist in the target repo"
     prompt_yes_no "Continue with install mode anyway? Consider using standardize instead." "n" || exit 1
   fi
@@ -1283,6 +1484,7 @@ run_install() {
   apply_git_identity_if_needed
 
   log "AI-Ready install complete for $TARGET_REPO"
+  print_first_pass_guidance
 }
 
 run_standardize() {
@@ -1296,10 +1498,13 @@ run_standardize() {
   backup_path_if_exists "$TARGET_REPO/CLAUDE.md" "$backup_root"
   backup_path_if_exists "$TARGET_REPO/.github/copilot-instructions.md" "$backup_root"
   backup_path_if_exists "$TARGET_REPO/.github/instructions" "$backup_root"
+  backup_path_if_exists "$TARGET_REPO/.cursor/rules/ai-ready.mdc" "$backup_root"
+  backup_path_if_exists "$TARGET_REPO/AI-READY.md" "$backup_root"
   backup_path_if_exists "$TARGET_REPO/.githooks/pre-commit" "$backup_root"
 
   remove_path_if_exists "$TARGET_REPO/.github/copilot-instructions.md"
   remove_path_if_exists "$TARGET_REPO/.github/instructions"
+  remove_path_if_exists "$TARGET_REPO/.cursor/rules/ai-ready.mdc"
 
   if ! has_runtime codex; then
     remove_path_if_exists "$TARGET_REPO/AGENTS.md"
@@ -1309,12 +1514,17 @@ run_standardize() {
     remove_path_if_exists "$TARGET_REPO/CLAUDE.md"
   fi
 
+  if ! has_runtime generic; then
+    remove_path_if_exists "$TARGET_REPO/AI-READY.md"
+  fi
+
   write_canonical_files 1
   write_runtime_adapters 1
   install_git_hook_if_needed
   apply_git_identity_if_needed
 
   log "AI-Ready standardization complete for $TARGET_REPO"
+  print_first_pass_guidance
 }
 
 parse_args() {
