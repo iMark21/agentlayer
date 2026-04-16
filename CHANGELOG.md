@@ -2,6 +2,12 @@
 
 All notable changes to AI-Ready Bootstrap are documented here.
 
+## [0.2.1] - 2026-04-16
+
+### Changed
+- README rewritten as a scenario-driven guide: "Does this sound familiar?", agent flow diagram, copy-paste install blocks per runtime (Claude Code, Codex, Copilot, Cursor, generic), and three real workflow examples (feature, bug fix, investigation)
+- Install section reorganised by AI tool instead of Path A / Path B — each runtime has a self-contained block with the exact prompt or command to use
+
 ## [0.2.0] - 2026-04-16
 
 ### Added
