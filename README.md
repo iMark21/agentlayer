@@ -16,8 +16,9 @@ Private repo: `iMark21/ai-ready-bootstrap`
 Use this when you want the repository to be installed and grounded by the AI you already use.
 
 1. Open [assistant-installer/README.md](assistant-installer/README.md).
-2. If your AI supports custom skills or reusable playbooks, install [assistant-installer/SKILL.md](assistant-installer/SKILL.md).
-3. If it does not, paste [assistant-installer/PROMPT.md](assistant-installer/PROMPT.md) into your AI.
+2. If you use Codex and want the copy-here-use-there version, open [assistant-installer/addon/README.md](assistant-installer/addon/README.md).
+3. If your AI supports custom skills or reusable playbooks, install [assistant-installer/SKILL.md](assistant-installer/SKILL.md).
+4. If it does not, paste [assistant-installer/PROMPT.md](assistant-installer/PROMPT.md) into your AI.
 
 This is the preferred path if you want `.ai/context*` to be filled from the real repository on the first pass.
 
@@ -128,5 +129,6 @@ Use `generic` when the team has not settled on a single assistant yet, or when t
 ## Read more
 
 - [assistant-installer/README.md](assistant-installer/README.md) for the AI-assisted install path
+- [assistant-installer/addon/README.md](assistant-installer/addon/README.md) for the ready-to-copy skill add-on
 - [MANUAL.md](MANUAL.md) for the long-form operating guide
 - [CONTRIBUTING.md](CONTRIBUTING.md) for branch, commit, and validation rules

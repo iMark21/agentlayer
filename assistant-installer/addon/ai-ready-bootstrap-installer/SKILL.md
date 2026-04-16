@@ -2,8 +2,6 @@
 
 Use this when the user wants the current repository to receive the canonical AI-Ready layer through the AI itself instead of through the CLI.
 
-If you only want the ready-to-copy add-on package, use `assistant-installer/addon/ai-ready-bootstrap-installer/`.
-
 ## Goal
 
 Create a real `.ai/` control plane for the repository and keep runtime adapters thin, but write grounded project-specific content from the start instead of leaving template filler everywhere.
