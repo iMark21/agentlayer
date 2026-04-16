@@ -1,54 +1,219 @@
 Use this prompt in any AI tool that can read and edit the target repository locally.
 
-Replace the bracketed values before running it if you already know them. If you do not, keep `auto`.
-
 ```text
-Install the canonical AI-Ready layer in this repository through the AI itself.
+Install the canonical AI-Ready layer in this repository.
 
-Requested mode: [auto: fresh install or standardize existing AI files]
-Requested project type: [auto | android | ios | web | backend | generic]
-Requested runtimes: [auto | codex,claude,generic | all | generic]
+─────────────────────────────────────────
+STEP 0 — MANDATORY. DO THIS BEFORE ANYTHING ELSE.
+─────────────────────────────────────────
+Ask the user:
 
-Workflow:
-1. Audit the repository before writing anything.
-2. Detect the real project type from evidence in the repository.
-3. Inspect root structure, build files, dependency manifests, modules, packages, targets, test entry points, and any existing AI-related files.
-4. If AI-related files already exist, archive them under .ai/archive/ai-assisted-bootstrap-<timestamp>/ before overwriting active files.
-5. Create the canonical AI-Ready structure:
-   - .ai/README.md
-   - .ai/context.md
-   - .ai/context/architecture.md
-   - .ai/context/dependencies.md
-   - .ai/context/features.md
-   - .ai/context/repository.md
-   - .ai/context/recent-changes.md
-   - .ai/decision-framework.md
-   - .ai/rules/
-   - .ai/agents/
-   - .ai/skills/
-   - .ai/features/
-   - .ai/archive/
-6. Write grounded content from the real repository, not generic placeholder text:
-   - real module names or paths
-   - real architecture boundaries
-   - real dependencies
-   - real test commands or test directories
-   - real repository workflow constraints
-   - real feature areas
-7. Create only the selected runtime adapters:
-   - AGENTS.md
-   - CLAUDE.md
-   - .github/copilot-instructions.md plus .github/instructions/
-   - .cursor/rules/ai-ready.mdc
-   - AI-READY.md
-8. Keep .ai/ as the only source of truth and keep runtime adapters thin.
-9. Do not edit product code in this install pass unless I explicitly ask for that too.
-10. If something is unclear, record an explicit open question instead of inventing details.
+  "Which AI tool or tools will you use in this repo?
+   Options:
+     1. Claude Code only
+     2. Codex only
+     3. GitHub Copilot only
+     4. Cursor only
+     5. Generic (any AI, no vendor-specific adapter)
+     6. Several — tell me which ones
+     7. All of the above
 
-When you finish:
-- summarize the project type detected
-- list the adapters created
-- list the key repo facts you used to ground the files
-- list the open questions that still need confirmation
-- recommend the next workflow for feature work, bug fixing, or refactoring
+   You can also say 'just one' or 'all'. I will only create the adapters
+   you actually need."
+
+Wait for the answer. Do not create any files until you have it.
+Do not assume. Do not default to all. Do not search the web.
+
+─────────────────────────────────────────
+STEP 1 — Audit before writing anything.
+─────────────────────────────────────────
+Inspect:
+- root structure and folder layout
+- build files and dependency manifests
+- module, package, target, or workspace boundaries
+- test directories and CI configuration
+- any existing AI-related files (AGENTS.md, CLAUDE.md, .github/copilot-instructions.md,
+  .cursor/rules/, AI-READY.md, .ai/)
+
+Detect the project type from evidence: android, ios, web, backend, or generic.
+If AI-related files already exist, archive them under .ai/archive/ai-assisted-bootstrap-<timestamp>/
+before overwriting active files.
+
+─────────────────────────────────────────
+STEP 2 — Create the canonical .ai/ structure.
+─────────────────────────────────────────
+Create these files:
+  .ai/README.md
+  .ai/context.md
+  .ai/context/architecture.md
+  .ai/context/dependencies.md
+  .ai/context/features.md
+  .ai/context/repository.md
+  .ai/context/recent-changes.md
+  .ai/decision-framework.md
+  .ai/rules/              (at minimum: code.md, testing.md)
+  .ai/agents/
+    agent-explore.md
+    agent-context-bootstrap.md
+    agent-plan.md
+    agent-code.md
+    agent-verify.md
+    agent-fix.md
+    agent-tech.md
+    agent-spike.md
+  .ai/skills/
+    context-bootstrap.md
+    context-refresh.md
+    feature-scaffold.md
+    migration-audit.md
+  .ai/features/
+  .ai/archive/
+
+─────────────────────────────────────────
+STEP 3 — Write grounded content.
+─────────────────────────────────────────
+Fill .ai/context* with real repository knowledge:
+- real module names or paths
+- real architecture boundaries
+- real dependencies
+- real test commands or test directories
+- real repository workflow constraints
+- real feature areas
+
+Do not leave generic placeholder text. If a detail is unclear, write an explicit
+open question in that file instead of inventing details.
+
+─────────────────────────────────────────
+STEP 4 — Create only the runtime adapters the user requested.
+─────────────────────────────────────────
+Use EXACTLY the formats below. Do not search the web for adapter formats.
+
+--- CLAUDE CODE adapter (file: CLAUDE.md) ---
+# Claude Adapter
+
+Treat `.ai/` as canonical.
+
+Read order:
+1. `.ai/README.md`
+2. `.ai/context.md`
+3. `.ai/context/architecture.md`
+4. `.ai/context/dependencies.md`
+5. `.ai/context/repository.md`
+6. `.ai/decision-framework.md`
+7. The relevant files under `.ai/rules/`, `.ai/agents/`, and `.ai/skills/`
+
+First pass rule:
+- if `.ai/context.md` still shows `Pending first-pass grounding`, run `.ai/agents/agent-context-bootstrap.md` before implementation work
+
+Do not duplicate routing, workflow, or checklists here.
+--- END ---
+
+--- CODEX adapter (file: AGENTS.md) ---
+# Codex Adapter
+
+Treat `.ai/` as canonical.
+
+Read order:
+1. `.ai/README.md`
+2. `.ai/context.md`
+3. `.ai/context/architecture.md`
+4. `.ai/context/dependencies.md`
+5. `.ai/context/repository.md`
+6. `.ai/decision-framework.md`
+7. The relevant files under `.ai/rules/`, `.ai/agents/`, and `.ai/skills/`
+
+First pass rule:
+- if `.ai/context.md` still shows `Pending first-pass grounding`, run `.ai/agents/agent-context-bootstrap.md` before implementation work
+
+Do not maintain duplicate workflow logic here.
+--- END ---
+
+--- GITHUB COPILOT adapter (file: .github/copilot-instructions.md) ---
+# Copilot Adapter
+
+Treat `.ai/` as canonical.
+
+Before editing:
+1. Read `.ai/README.md`
+2. Read `.ai/context.md`
+3. Read `.ai/context/architecture.md`
+4. Read `.ai/context/dependencies.md`
+5. Read `.ai/context/repository.md`
+6. Read `.ai/decision-framework.md`
+
+First pass rule:
+- if `.ai/context.md` still shows `Pending first-pass grounding`, follow `.ai/agents/agent-context-bootstrap.md` before implementation work
+
+Do not create a second source of truth under `.github/`.
+--- END ---
+
+--- CURSOR adapter (file: .cursor/rules/ai-ready.mdc) ---
+---
+description: AI-Ready adapter for Cursor
+globs:
+alwaysApply: true
+---
+
+Treat `.ai/` as canonical.
+
+Read order:
+1. `.ai/README.md`
+2. `.ai/context.md`
+3. `.ai/context/architecture.md`
+4. `.ai/context/dependencies.md`
+5. `.ai/context/repository.md`
+6. `.ai/decision-framework.md`
+7. The relevant files under `.ai/rules/`, `.ai/agents/`, and `.ai/skills/`
+
+If `.ai/context.md` still shows `Pending first-pass grounding`, run `.ai/agents/agent-context-bootstrap.md` first.
+Do not duplicate workflow logic inside Cursor-specific files.
+--- END ---
+
+--- GENERIC adapter (file: AI-READY.md) ---
+# Generic AI Adapter
+
+Use this file when the runtime does not have a native repo adapter format, or when you want one universal entry point that works across multiple tools.
+
+Treat `.ai/` as canonical.
+
+## Read Order
+
+1. `.ai/README.md`
+2. `.ai/context.md`
+3. `.ai/context/architecture.md`
+4. `.ai/context/dependencies.md`
+5. `.ai/context/repository.md`
+6. `.ai/decision-framework.md`
+7. The relevant files under `.ai/rules/`, `.ai/agents/`, and `.ai/skills/`
+
+## Operating Rules
+
+- Do not create a second source of truth outside `.ai/`
+- Prefer existing project conventions over generic best practices
+- If `.ai/context.md` still shows `Pending first-pass grounding`, run `.ai/agents/agent-context-bootstrap.md` first
+- If key architecture details are still placeholders, audit the repo first and update `.ai/context/`
+- After meaningful work, update `.ai/context/recent-changes.md`
+
+## Suggested First Prompt
+
+Audit this repository against the canonical `.ai/` layer, summarize the real architecture and gaps, and then propose the smallest safe set of updates before changing code.
+--- END ---
+
+─────────────────────────────────────────
+STEP 5 — Do not do any of these.
+─────────────────────────────────────────
+- Do not search the web for adapter formats or AI tool documentation
+- Do not edit product code during this install pass
+- Do not create adapters for runtimes the user did not request
+- Do not leave template filler in .ai/context* files
+- Do not create a second source of truth outside .ai/
+
+─────────────────────────────────────────
+STEP 6 — When you finish, summarize:
+─────────────────────────────────────────
+- project type detected
+- runtimes installed
+- key repo facts used to ground the files
+- open questions that still need confirmation
+- recommended next workflow (feature work, bug fixing, or refactoring)
 ```

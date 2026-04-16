@@ -2,6 +2,14 @@
 
 All notable changes to AI-Ready Bootstrap are documented here.
 
+## [0.3.2] - 2026-04-16
+
+### Fixed
+- PROMPT.md and SKILL.md now require the AI to ask which runtime(s) the user wants BEFORE creating any files. Previously the `[auto]` default caused the AI to install all runtimes and search the web for Copilot and Cursor adapter formats.
+- All adapter format templates are now embedded inline in PROMPT.md and SKILL.md. The AI no longer needs to search the web to know the correct format for CLAUDE.md, AGENTS.md, copilot-instructions.md, .mdc, or AI-READY.md.
+- Added explicit "Do not search the web" rule to both files.
+- Synced addon/ai-ready-bootstrap-installer/SKILL.md with parent SKILL.md.
+
 ## [0.3.1] - 2026-04-16
 
 ### Changed
