@@ -4,163 +4,228 @@ Your AI assistant writes better code when it actually knows your project.
 
 AI-Ready Bootstrap adds a structured context layer to any existing repository so that Codex, Claude Code, Copilot, Cursor — or any AI — stops guessing and starts following your real architecture, conventions, and decisions from the first prompt.
 
-Works with Android, iOS, web, backend, and any tech stack. No dependencies. One command. Any AI runtime.
+No dependencies. One command. Any AI runtime. Any tech stack.
 
-## Before and after
+## Does this sound familiar?
 
-| Without AI-Ready | With AI-Ready |
-| --- | --- |
-| Generic responses — AI ignores your patterns | Context read before every action |
-| Decisions improvised per session | Explicit decision framework consulted |
-| Loose prompts, no memory between tasks | Accumulated project memory |
-| Each feature starts from zero | Reusable scaffold in one command |
-| Migrations estimated by guesswork | Structured audits with risk and scope |
-| Knowledge lives in one person's head | Documented and queryable by any AI |
+- You open Codex or Claude on an existing project and the first ten minutes are spent explaining the architecture, again
+- Your `AGENTS.md` or `CLAUDE.md` has grown to 200+ lines and the AI still ignores half of it
+- You ask the AI to add a feature and it invents a folder structure that does not match your project
+- A new teammate joins and has to figure out the codebase from scratch because there is no structured context
+- A legacy project has no AI setup at all and you do not know where to start
 
-## Quick start
+AI-Ready Bootstrap solves all of these. It gives your repository a canonical `.ai/` layer that any AI reads before acting — so it understands the product, follows your conventions, and remembers what was already built.
+
+## What you get: a team of agents
+
+When you install AI-Ready, your repo gets a team of specialized agents that follow a structured workflow:
+
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│   Explore   │────>│    Plan     │────>│    Code     │────>│   Verify    │
+│             │     │             │     │             │     │             │
+│ Maps the    │     │ Creates a   │     │ Implements  │     │ Runs tests, │
+│ area before │     │ file-level  │     │ step by     │     │ checks      │
+│ you touch   │     │ plan with   │     │ step, stops │     │ criteria,   │
+│ anything    │     │ tests and   │     │ if blocked  │     │ flags risks │
+│             │     │ trade-offs  │     │             │     │             │
+└─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘
+```
+
+Plus specialized agents for **bug fixes** (`proj-fix`), **refactors** (`proj-tech`), and **investigations** (`proj-spike`).
+
+Plus reusable skills: **context refresh**, **feature scaffold**, **migration audit**.
+
+All of this is generated automatically. The agents are Markdown playbooks — they work with any AI, not just one vendor.
+
+## Install it in 30 seconds
+
+Pick the AI you use and follow the corresponding block.
+
+### Claude Code
+
+Paste this prompt inside your project:
+
+```
+I want to convert this project into an AI-Ready repository.
+
+Your job is not to write product code yet. Your job is to build the operational
+layer so that any future AI can work on this repo with real context.
+
+Do it in this order:
+0. Before creating files, ask me which AI runtimes I want to use in this repo.
+   At minimum ask whether the target is Codex, Claude Code, GitHub Copilot,
+   or a multi-runtime system.
+1. Audit the repo: stack, architecture, modules, build files, tests, CI,
+   existing AI files.
+2. Propose an AI-Ready structure adapted to this repo:
+   - a canonical layer in .ai/
+   - context files (context.md, architecture.md, dependencies.md, features.md,
+     recent-changes.md)
+   - scoped rules by file type
+   - specialized agents
+   - repeatable skills
+   - runtime adapters only for the runtimes chosen
+3. Generate the files with real content from the repo, not generic placeholders.
+4. Use the real architecture and conventions of the repo.
+   Do not invent layers that do not exist.
+5. When done, deliver:
+   - list of files created
+   - decisions taken
+   - open assumptions
+   - recommendations for the next iteration
+```
+
+Claude audits the repo, creates `.ai/`, and fills the context with real project knowledge in one pass.
+
+### Codex
+
+```bash
+# Copy the installer skill
+git clone https://github.com/iMark21/ai-ready-bootstrap.git /tmp/ai-ready-bootstrap
+cp -r /tmp/ai-ready-bootstrap/assistant-installer/addon/ai-ready-bootstrap-installer/ ~/.codex/skills/
+```
+
+Then in Codex, open your project and say:
+
+```
+Use the ai-ready-bootstrap-installer skill in this repository.
+```
+
+Codex runs the same structured audit and generates a grounded `.ai/` layer.
+
+### Copilot, Cursor, or another AI
 
 ```bash
 # Install the CLI
-git clone https://github.com/iMark21/ai-ready-bootstrap.git
-cd ai-ready-bootstrap && bash install.sh
+git clone https://github.com/iMark21/ai-ready-bootstrap.git /tmp/ai-ready-bootstrap
+cd /tmp/ai-ready-bootstrap && bash install.sh
 
-# Bootstrap your project
+# Generate the AI layer
+ai-ready install /path/to/your-repo --runtimes copilot,generic
+# or: --runtimes cursor,generic
+# or: --runtimes all
+```
+
+Then open the project in your AI and say:
+
+```
+Read AI-READY.md and the .ai/ layer. The context files are templates —
+audit the repository, replace the placeholders with real project knowledge,
+and summarize what you found.
+```
+
+### Not sure which AI / want full control
+
+```bash
+git clone https://github.com/iMark21/ai-ready-bootstrap.git /tmp/ai-ready-bootstrap
+cd /tmp/ai-ready-bootstrap && bash install.sh
+ai-ready install /path/to/your-repo --runtimes generic
+```
+
+This creates `.ai/` plus `AI-READY.md` — a universal adapter that works with any tool. You can add more runtime adapters later.
+
+### Batch / CI installs
+
+```bash
 ai-ready install /path/to/your-repo \
-  --runtimes claude,generic \
-  --project-type ios
-
-# Then tell your AI:
-# "Read CLAUDE.md and the .ai/ layer. Ground the context with real repo knowledge."
+  --runtimes codex,claude,copilot,cursor,generic \
+  --project-type android \
+  --non-interactive --yes
 ```
 
-That is it. Your AI now has architecture, conventions, and workflow memory.
+## Now use it
 
-## Who is this for
+After install, your AI has context and a structured workflow. Here is what working with it looks like.
 
-- Solo developers who use AI coding assistants daily and are tired of repeating the same context every session
-- Teams where several developers use different AI runtimes on the same repository
-- Tech leads who want the AI to follow team conventions, not invent its own
-- Anyone building with Codex, Claude Code, Copilot, or Cursor who wants structured results instead of generic suggestions
+### Example: adding a login screen
 
-## Choose your install path
+**Step 1 — Explore the area:**
 
-| Path | Best when | What you get |
-| --- | --- | --- |
-| [Path A: install through your AI](assistant-installer/README.md) | You already work inside Codex, Claude, Cursor, or another AI with repo access | The AI inspects the repo first and writes a grounded `.ai/` layer instead of generic placeholders |
-| Path B: install through the CLI | You want deterministic scaffolding, repeatable commands, or non-interactive runs | The CLI generates the canonical `.ai/` layer plus the adapters you select |
+Tell your AI:
 
-### Path A: install through your AI
+> Use the proj-explore agent. I need to add a login screen with email and password.
 
-Use this when you want the repository to be installed and grounded by the AI you already use.
+The AI reads `.ai/context/architecture.md`, maps your existing auth code, finds reusable patterns, and reports back — before writing a single line.
 
-1. Open [assistant-installer/README.md](assistant-installer/README.md).
-2. If you use Codex and want the copy-here-use-there version, open [assistant-installer/addon/README.md](assistant-installer/addon/README.md).
-3. If your AI supports custom skills or reusable playbooks, install [assistant-installer/SKILL.md](assistant-installer/SKILL.md).
-4. If it does not, paste [assistant-installer/PROMPT.md](assistant-installer/PROMPT.md) into your AI.
+**Step 2 — Plan:**
 
-This is the preferred path if you want `.ai/context*` to be filled from the real repository on the first pass.
+> Use the proj-feature agent. Plan the login screen feature.
 
-### Path B: install through the CLI
+You get a file-level plan: which files to create, which to modify, what tests to add, what state pattern to use. Review and approve before any code is written.
 
-```bash
-git clone https://github.com/iMark21/ai-ready-bootstrap.git
-cd ai-ready-bootstrap
-bash install.sh
-ai-ready --help
-```
+**Step 3 — Implement:**
 
-You can also run the command directly without installing globally:
+> Use the proj-code agent. Implement the approved plan.
 
-```bash
-bin/ai-ready --help
-```
+The AI codes task by task. If a step fails, it stops and reports instead of bulldozing ahead.
 
-Fresh install:
+**Step 4 — Verify:**
 
-```bash
-ai-ready install /path/to/project \
-  --runtimes codex,claude,generic \
-  --project-type ios
-```
+> Use the proj-verify agent. Verify the login feature.
 
-Normalize an existing mixed setup:
+Tests run, acceptance criteria are checked, and any residual risk is documented.
 
-```bash
-ai-ready standardize /path/to/project \
-  --runtimes all \
-  --yes
-```
+The feature is now recorded in `.ai/features/login.md` — so next time anyone (human or AI) touches auth, they have context.
+
+### Example: fixing a bug
+
+Tell your AI:
+
+> Use the proj-fix agent. The total is not updating when I remove an item from the cart.
+
+The AI loads the project context, finds the root cause, writes a failing test, applies the smallest safe fix, verifies the test passes, and records the gotcha in `.ai/context/recent-changes.md`.
+
+### Example: should I refactor this?
+
+> Use the proj-spike agent. Is it worth extracting the payment logic into its own module?
+
+You get a structured analysis: pros, cons, estimated effort, risks, dependencies, and a recommendation (proceed, pivot, or abandon). No code is written — just a decision document.
 
 ## What gets installed
 
-| Piece | What it contains | What you do with it |
+```
+.ai/
+├── context.md              # what the product does and how it is built
+├── context/
+│   ├── architecture.md     # layers, modules, data flow
+│   ├── dependencies.md     # libraries, SDKs, versions
+│   ├── features.md         # feature inventory and status
+│   ├── repository.md       # git workflow, CI, branching
+│   └── recent-changes.md   # what changed recently, gotchas
+├── decision-framework.md   # standard patterns for common changes
+├── rules/                  # guardrails by file type (language, UI, tests, data...)
+├── agents/                 # the 8 workflow playbooks described above
+├── skills/                 # 4 reusable checklists
+├── features/               # memory per completed feature
+└── archive/                # past plans and fixes
+```
+
+Plus a thin adapter at the root for your AI runtime (`AGENTS.md`, `CLAUDE.md`, `.github/copilot-instructions.md`, `.cursor/rules/ai-ready.mdc`, or `AI-READY.md`).
+
+## Supported runtimes
+
+| Runtime | Adapter generated | Install flag |
 | --- | --- | --- |
-| `.ai/context*` | Project summary, architecture, dependencies, feature map, repository workflow, recent changes | Give the AI real project memory and keep it updated |
-| `.ai/rules/*` | Language, UI, testing, analytics, data, and feature guardrails | Constrain edits so the AI follows the repo style and boundaries |
-| `.ai/agents/*` | Playbooks such as `proj-explore`, `proj-feature`, `proj-code`, `proj-verify`, `proj-fix`, `proj-tech` | Run the right workflow for the task at hand |
-| `.ai/skills/*` | Reusable checklists such as `context-bootstrap`, `context-refresh`, `feature-scaffold`, `migration-audit` | Reuse repeatable procedures without re-explaining them every time |
-| Runtime adapters | `AGENTS.md`, `CLAUDE.md`, `.github/copilot-instructions.md`, `.cursor/rules/ai-ready.mdc`, `AI-READY.md` | Let each AI runtime enter the same canonical `.ai/` layer |
+| Codex | `AGENTS.md` | `--runtimes codex` |
+| Claude Code | `CLAUDE.md` | `--runtimes claude` |
+| GitHub Copilot | `.github/copilot-instructions.md` | `--runtimes copilot` |
+| Cursor | `.cursor/rules/ai-ready.mdc` | `--runtimes cursor` |
+| Any other AI | `AI-READY.md` | `--runtimes generic` |
 
-## Use cases
+Use `--runtimes all` to generate every adapter. Use `generic` when you want a tool-agnostic setup.
 
-| If you need to... | Use this | Result |
+## Supported project types
+
+| Type | Detected by | Rules generated |
 | --- | --- | --- |
-| Add AI-Ready to a repo with no existing setup | Path A or `ai-ready install` | Canonical `.ai/` plus the runtime adapters you choose |
-| Clean up a repo with mixed `AGENTS.md`, `CLAUDE.md`, Copilot, or Cursor files | `ai-ready audit` then `ai-ready standardize` | Existing files are backed up and replaced with one canonical `.ai/` layer |
-| Ship a feature after bootstrap | `proj-explore` -> `proj-feature` -> `proj-code` -> `proj-verify` | Explore, plan, implement, and verify with one explicit flow |
-| Fix a bug after bootstrap | `proj-fix` -> `proj-code` -> `proj-verify` | Reproduce, isolate, fix, and run regression checks |
-| Refactor or run a migration | `proj-spike` or `migration-audit` -> `proj-tech` -> `proj-code` -> `proj-verify` | Decide scope first, then change structure in controlled steps |
+| `android` | `settings.gradle`, `AndroidManifest.xml` | Kotlin, Compose |
+| `ios` | `.xcodeproj`, `.xcworkspace`, `Package.swift` | Swift, SwiftUI |
+| `web` | `package.json`, `pnpm-lock.yaml` | TypeScript, React |
+| `backend` | `go.mod`, `Cargo.toml`, `pyproject.toml` | Code, UI |
+| `generic` | Fallback | Code, UI |
 
-## Workflows after install
-
-### Feature work
-
-1. Ground the context first if `.ai/context.md` still says `Pending first-pass grounding`.
-2. Explore the relevant area with `proj-explore`.
-3. Turn the request into a file-level plan with `proj-feature`.
-4. Implement in small steps with `proj-code`.
-5. Validate with `proj-verify`.
-6. Refresh project memory in `.ai/context/recent-changes.md`.
-
-### Bug fix work
-
-1. Reproduce and isolate with `proj-fix`.
-2. Apply the smallest safe change with `proj-code`.
-3. Run focused regression checks with `proj-verify`.
-4. Record the constraint or gotcha in `.ai/context/recent-changes.md`.
-
-### Refactor or migration work
-
-1. Investigate options with `proj-spike` or `migration-audit`.
-2. Sequence the work with `proj-tech`.
-3. Execute incrementally with `proj-code`.
-4. Validate blast radius with `proj-verify`.
-
-See [MANUAL.md](MANUAL.md) for the full operating guide with detailed examples.
-
-## Runtime adapters
-
-| Runtime | Adapter |
-| --- | --- |
-| `codex` | `AGENTS.md` |
-| `claude` | `CLAUDE.md` |
-| `copilot` | `.github/copilot-instructions.md` |
-| `cursor` | `.cursor/rules/ai-ready.mdc` |
-| `generic` | `AI-READY.md` |
-
-`all` expands to `codex,claude,copilot,cursor,generic`.
-
-Use `generic` when the team has not settled on a single assistant yet, or when the runtime has no native repo instruction format.
-
-## Project types
-
-| Project type | Detection hints | Primary rules generated |
-| --- | --- | --- |
-| `android` | `settings.gradle`, `settings.gradle.kts`, `AndroidManifest.xml` | `.ai/rules/kotlin.md`, `.ai/rules/compose.md` |
-| `ios` | `.xcodeproj`, `.xcworkspace`, `Package.swift`, `Podfile` | `.ai/rules/swift.md`, `.ai/rules/swiftui.md` |
-| `web` | `package.json`, `pnpm-lock.yaml`, `yarn.lock` | `.ai/rules/typescript.md`, `.ai/rules/react.md` |
-| `backend` | `go.mod`, `Cargo.toml`, `pyproject.toml` | `.ai/rules/code.md`, `.ai/rules/ui.md` |
-| `generic` | Fallback when nothing else matches | `.ai/rules/code.md`, `.ai/rules/ui.md` |
+The CLI auto-detects the project type from the repo structure. Override with `--project-type`.
 
 ## The core idea
 
@@ -172,9 +237,10 @@ The system is runtime-agnostic. AI-Ready works on any tech project if you define
 4. Specialized agents or flows by task type
 5. Useful memory of what has already been done
 
+The stack, the language, and the AI runtime can all change. These five pieces are what make a repository legible to any assistant from the first session.
+
 ## Read more
 
-- [MANUAL.md](MANUAL.md) — Full operating guide with examples
-- [assistant-installer/README.md](assistant-installer/README.md) — AI-assisted install path
-- [CONTRIBUTING.md](CONTRIBUTING.md) — Branch, commit, and validation rules
+- [MANUAL.md](MANUAL.md) — Full reference: all commands, flags, workflows, and advanced usage
+- [CONTRIBUTING.md](CONTRIBUTING.md) — How to contribute
 - [CHANGELOG.md](CHANGELOG.md) — Version history
