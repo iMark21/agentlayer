@@ -1397,6 +1397,7 @@ has_existing_ai_files() {
     || [ -f "$TARGET_REPO/AGENTS.md" ] \
     || [ -f "$TARGET_REPO/CLAUDE.md" ] \
     || [ -f "$TARGET_REPO/.github/copilot-instructions.md" ] \
+    || [ -d "$TARGET_REPO/.github/instructions" ] \
     || [ -f "$TARGET_REPO/.cursor/rules/agentlayer.mdc" ] \
     || [ -f "$TARGET_REPO/AGENTLAYER.md" ]
 }
